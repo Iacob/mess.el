@@ -37,14 +37,14 @@
 
 (defvar mess-config-machine-names '() "Machine names.")
 
-(defvar mess-config-path-list-start-line 2 "Device list start line.")
-
 (defun mess-config-fill-field (name value)
+  "Fill VALUE to field NAME. "
   (dolist (field mess-config-form)
     (when (and (equal (plist-get field 'name) name) (plist-get field 'widget))
       (widget-value-set (plist-get field 'widget) value))))
 
 (defun mess-config-field-value (name)
+  "Return value of field NAME."
   (let (field-value)
     (dolist (field mess-config-form)
       (when (and (null field-value)
@@ -54,17 +54,32 @@
     field-value))
 
 (defun mess-config--add-path (machine path)
-  "Add device image path."
+  "Add device image PATH of MACHINE."
   (let ((path-list (mess-config-field-value 'device-image-path-list)))
     (add-to-list 'path-list (concat machine " - " path) 't)
     (mess-config-fill-field 'device-image-path-list path-list)))
 
-(defun mess-config--save-formvalues ()
-  (let (conf)
-    (maphash (lambda (k v)
-               (setq conf (append conf (list k v))))
-             mess-config-formvalues)
+(defun mess-config--save-config ()
+  "Save configurations to file."
+  (let ((fields '(working-dir exec rompath args device-image-path-list))
+        conf)
+    (dolist (field fields)
+      (setq conf (append conf (list field (mess-config-field-value field))))
+      ;;(add-to-list 'conf (list field (mess-config-field-value field)) 't)
+      )
+    (message "config to save: %S" conf)
     conf))
+
+(defun mess-config-add-widget (name type widget &rest params)
+  "Add widget to user interface.
+   NAME: widget name
+   TYPE: widget type
+   WIDGET: widget instance"
+  (add-to-list 'mess-config-form
+               (list 'name name
+         	     'type type
+         	     'widget widget)))
+
 
 ;;;###autoload
 (defun mess-config-open-config-panel ()
@@ -104,34 +119,50 @@
 
   
   
-  (insert "\n" (propertize "mess.el configuration" 'face 'info-title-2) "\n\n")
+  (widget-insert "\n" (propertize "mess.el configuration" 'face 'info-title-2) "\n\n")
   (widget-create 'link
 		 :notify
 		 (lambda (w &rest params)
-		   nil)
+                   (let (dir-name)
+		     (setq dir-name
+			   (read-directory-name
+			    "Please select working directory: "))
+                     (mess-config-fill-field 'working-dir dir-name)))
 		 "Select working directory")
-  (insert "\n")
-  (widget-create 'const :format "➥ %v" "")
-  (insert "\n")
+  (widget-insert "\n")
+  (mess-config-add-widget 'working-dir 'text-widget
+                          (widget-create 'const :format "➥ %v" ""))
+  (widget-insert "\n")
   (widget-create 'link
 		 :notify
 		 (lambda (w &rest params)
-		   nil)
+                   (let (dir-name)
+		     (setq dir-name
+			   (read-file-name
+			    "Please select mame executable: "))
+		     (mess-config-fill-field 'exec dir-name)))
 		 "Select mame executable")
-  (insert "\n")
-  (widget-create 'const :format "➥ %v" "")
-  (insert "\n")
+  (widget-insert "\n")
+  (mess-config-add-widget 'exec 'text-widget
+                          (widget-create 'const :format "➥ %v" ""))
+  (widget-insert "\n")
   (widget-create 'link
 		 :notify
 		 (lambda (w &rest params)
-		   nil)
+		   (let (dir-name)
+		     (setq dir-name
+			   (read-file-name
+			    "Please select rom directory: "))
+		     (mess-config-fill-field 'rompath dir-name)))
 		 "Select rom directory")
-  (insert "\n")
-  (widget-create 'const :format "➥ %v" "")
-  (insert "\n")
-  (insert "\nextra arguments:\n")
-  (widget-create 'editable-field "")
-  (insert "\n")
+  (widget-insert "\n")
+  (mess-config-add-widget 'rompath 'text-widget
+                          (widget-create 'const :format "➥ %v" ""))
+  (widget-insert "\n")
+  (widget-insert "\n" "extra arguments:" "\n")
+  (mess-config-add-widget 'args 'value-widget
+                          (widget-create 'editable-field ""))
+  (widget-insert "\n")
 
 
   (widget-insert "\n" "Device image path:" "\n")
@@ -160,10 +191,8 @@
                      (mess-config-fill-field 'machine-name name)))
         	 "Select machine to add")
   (widget-insert "  ")
-  (add-to-list 'mess-config-form
-               (list 'name 'machine-name
-         	     'type 'text
-         	     'widget (widget-create 'const :format "➡ %v" "")))
+  (mess-config-add-widget 'machine-name 'text-widget
+                          (widget-create 'const :format "➡ %v" ""))
   (widget-insert "\n")
   (widget-create 'link
         	 :notify
@@ -173,10 +202,8 @@
                      (mess-config-fill-field 'device-image-path path)))
         	 "Please select device image path")
   (widget-insert "  ")
-  (add-to-list 'mess-config-form
-               (list 'name 'device-image-path
-         	     'type 'text
-         	     'widget (widget-create 'const :format "➡ %v" "")))
+  (mess-config-add-widget 'device-image-path 'text-widget
+                          (widget-create 'const :format "➡ %v" ""))
   (widget-insert "\n")
   (widget-create 'link
         	 :notify
@@ -196,7 +223,9 @@
         	 "Clear")  
   
   (widget-insert "\n\n\n")
-  (widget-create 'link :notify (lambda (&rest params) (message "line: %s" (line-number-at-pos (point)))) "Save")
+  (widget-create 'link :notify (lambda (&rest params)
+                                 (mess-config--save-config))
+                 "Save")
   (widget-create 'link
 		 :notify
                  (lambda (w &rest params)
