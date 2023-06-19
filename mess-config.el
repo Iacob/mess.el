@@ -55,17 +55,15 @@
 
 (defun mess-config--add-path (machine path)
   "Add device image path."
-  (let ((path-list (gethash 'device-image-path-list mess-config-formvalues))
-        (machine1 (car (split-string machine " "))))
-    (add-to-list 'path-list (list machine1 path) 't)
-    (puthash 'device-image-path-list path-list mess-config-formvalues)))
+  (let ((path-list (mess-config-field-value 'device-image-path-list)))
+    (add-to-list 'path-list (concat machine " - " path) 't)
+    (mess-config-fill-field 'device-image-path-list path-list)))
 
 (defun mess-config--save-formvalues ()
   (let (conf)
     (maphash (lambda (k v)
                (setq conf (append conf (list k v))))
              mess-config-formvalues)
-    (message "formvalue conf: %S" conf)
     conf))
 
 ;;;###autoload
@@ -97,7 +95,7 @@
                      (lambda (d) (and (string= "cartridge" (plist-get d 'name))
                                       (plist-get d 'mandatory)))
                      (plist-get m 'devices)))
-                  (mame-machine-info-loader-load))))
+                  (mess-machine-info-loader-load))))
 
 
 
@@ -136,7 +134,22 @@
   (insert "\n")
 
 
-  (widget-insert "\n" "Device image path:" "\n\n\n" )
+  (widget-insert "\n" "Device image path:" "\n")
+
+  (add-to-list 'mess-config-form
+               (list 'name 'device-image-path-list
+         	     'type 'list
+         	     'widget (widget-create 'editable-list
+                                            :entry-format "%d %v"
+                                            :format "%v"
+                                            :notify
+                                            (lambda (widget &rest ignore)
+                                              nil)
+                                            :value '("<NOT CONFIGURED YET>")
+                                            '(editable-field
+                                              :value "three"))))
+
+  (widget-insert "\n")
   
   (widget-create 'link
         	 :notify
@@ -171,7 +184,8 @@
                    (mess-config--add-path
                     (mess-config-field-value 'machine-name)
                     (mess-config-field-value 'device-image-path))
-                   (mess-config--save-formvalues))
+                   ;;(mess-config--save-formvalues)
+                   )
         	 "Add")
   (widget-insert " ")
   (widget-create 'link
@@ -191,7 +205,6 @@
 
   
   (use-local-map widget-keymap)
-  (widget-setup)
-  )
+  (widget-setup))
 
 ;;; mess-config.el ends here
