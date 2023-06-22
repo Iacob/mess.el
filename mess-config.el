@@ -56,19 +56,48 @@
 (defun mess-config--add-path (machine path)
   "Add device image PATH of MACHINE."
   (let ((path-list (mess-config-field-value 'device-image-path-list)))
-    (add-to-list 'path-list (concat machine " - " path) 't)
+    (add-to-list 'path-list
+                 (concat (car (split-string machine "\s")) " - " path) 't)
+    (setq path-list (mess-config--make-path-list path-list))
+    (setq path-list (seq-map (lambda (x) (concat (car x) " - " (cadr x)))
+                             path-list))
     (mess-config-fill-field 'device-image-path-list path-list)))
 
 (defun mess-config--save-config ()
   "Save configurations to file."
   (let ((fields '(working-dir exec rompath args device-image-path-list))
-        conf)
+        conf
+        conf-to-save)
     (dolist (field fields)
-      (setq conf (append conf (list field (mess-config-field-value field))))
-      ;;(add-to-list 'conf (list field (mess-config-field-value field)) 't)
-      )
-    (message "config to save: %S" conf)
-    conf))
+      (setq conf (append conf (list field (mess-config-field-value field)))))
+    (dolist (prop1 (seq-partition conf 2))
+      (if (equal (car prop1) 'device-image-path-list)
+          (let ((path-list (mess-config--make-path-list (cadr prop1))))
+            (when path-list
+              (add-to-list 'conf-to-save (car prop1) 't)
+              (add-to-list 'conf-to-save path-list 't)))
+        (when (> (length (string-trim (cadr prop1))) 0)
+          (setq conf-to-save (append conf-to-save
+                                     (list (car prop1) (cadr prop1)))))))
+    ;;(message "config to save: %S" conf-to-save)
+    (mess-base-save-user-config conf-to-save)
+    conf-to-save))
+
+(defun mess-config--load-config ()
+  "Load configurations from file."
+  (let ((fields '(working-dir exec rompath args device-image-path-list))
+        (conf (mess-base-reload-user-config)))
+    (message "--conf: %S" conf)
+
+    (dolist (field fields)
+      (if (equal field 'device-image-path-list)
+          (let (path-text-list)
+            (setq path-text-list
+                  (seq-map (lambda (p) (concat (car p) " - " (cadr p)))
+                           (plist-get conf field)))
+            (when path-text-list
+              (mess-config-fill-field field path-text-list)))
+        (mess-config-fill-field field (or (plist-get conf field) ""))))))
 
 (defun mess-config-add-widget (name type widget &rest params)
   "Add widget to user interface.
@@ -79,6 +108,17 @@
                (list 'name name
          	     'type type
          	     'widget widget)))
+
+(defun mess-config--make-path-list (path-text-list)
+  "Make device image path list.
+   Convert PATH-TEXT-LIST to acceptable path list."
+  (let (path-list)
+    (dolist (path-text (ensure-list path-text-list))
+      (when (string-match "^\\(.+?\\)\s+-\s+\\(.+\\)$" path-text)
+        (add-to-list 'path-list (list (match-string 1 path-text)
+                                      (match-string 2 path-text))
+                     't)))
+    path-list))
 
 
 ;;;###autoload
@@ -234,6 +274,8 @@
 
   
   (use-local-map widget-keymap)
-  (widget-setup))
+  (widget-setup)
+
+  (mess-config--load-config))
 
 ;;; mess-config.el ends here
