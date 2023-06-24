@@ -52,6 +52,15 @@
     ;; mame <machine-name> -rompath roms -cart <device image>
     (format "%s %s -rompath %s -cart %s %s" exec machine-name rompath device-image args-text)))
 
+(defun mess-launch-machine (machine device-image)
+  (let* ((cmd-line (mess-make-shell-command machine device-image)))
+    ;;(message-box cmd-line)
+    (switch-to-buffer-other-window "**mess output**")
+    
+    (insert (format "Running command: %s" cmd-line) "\n")
+    ;;(start-process-shell-command "mess command" "**mess output**" cmd-line)
+    ))
+
 (defvar mess-mode-map
   ;;(let ((map (make-sparse-keymap)))
   (let ((map (copy-keymap widget-keymap)))
@@ -81,7 +90,12 @@
 
   (mess-base-reload-user-config)
 
-  (widget-insert "\n")
+  (widget-insert "\n"
+                 (propertize "Machine & Device Image List"
+                             'face 'info-title-2)
+                 "\n\n"
+                 (propertize "(Use MESS menu from menubar to open config panel or refresh this page.)" 'face 'italic)
+                 "\n\n")
   
   (dolist (path1 (mess-base-get-config 'device-image-path-list))
     
@@ -101,9 +115,12 @@
           (widget-insert " ")
           (widget-create 'link
                          :notify (lambda (w &rest params)
-                                   (message-box (widget-get w :filename)))
+                                   (mess-launch-machine
+                                    (widget-get w :machine)
+                                    (concat (widget-get w :filedir) "/"
+                                            (widget-get w :filename))))
                          :machine machine
-                         :path path
+                         :filedir path
                          :filename file
                          (concat "💾" file))
           (widget-insert "\n")
