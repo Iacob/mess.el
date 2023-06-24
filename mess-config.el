@@ -38,7 +38,7 @@
 (defvar mess-config-machine-names '() "Machine names.")
 
 (defun mess-config-fill-field (name value)
-  "Fill VALUE to field NAME. "
+  "Fill VALUE to field NAME."
   (dolist (field mess-config-form)
     (when (and (equal (plist-get field 'name) name) (plist-get field 'widget))
       (widget-value-set (plist-get field 'widget) value))))
@@ -101,9 +101,10 @@
 
 (defun mess-config-add-widget (name type widget &rest params)
   "Add widget to user interface.
-   NAME: widget name
-   TYPE: widget type
-   WIDGET: widget instance"
+NAME: widget name
+TYPE: widget type
+WIDGET: widget instance
+PARAMS: other parameters"
   (add-to-list 'mess-config-form
                (list 'name name
          	     'type type
@@ -111,9 +112,9 @@
 
 (defun mess-config--make-path-list (path-text-list)
   "Make device image path list.
-   Convert PATH-TEXT-LIST to acceptable path list."
+Convert PATH-TEXT-LIST to acceptable path list."
   (let (path-list)
-    (dolist (path-text (ensure-list path-text-list))
+    (dolist (path-text path-text-list)
       (when (string-match "^\\(.+?\\)\s+-\s+\\(.+\\)$" path-text)
         (add-to-list 'path-list (list (match-string 1 path-text)
                                       (match-string 2 path-text))
@@ -260,7 +261,7 @@
         	 (lambda (w &rest params)
                    (mess-config-fill-field 'machine-name "")
                    (mess-config-fill-field 'device-image-path ""))
-        	 "Clear")  
+                 "Clear")
   
   (widget-insert "\n\n\n")
   (widget-create 'link :notify (lambda (&rest params)
