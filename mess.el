@@ -103,7 +103,7 @@
           (path (cadr path1))
           filelist)
       
-      (widget-insert (propertize machine 'face 'info-title-3) "\n")
+      (widget-insert "==" (propertize machine 'face 'info-title-3) "==\n")
       
       (condition-case err
           (setq filelist (directory-files path))
