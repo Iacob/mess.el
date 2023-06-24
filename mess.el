@@ -1,4 +1,4 @@
-;;; mess.el --- Front-end for MAME MESS.
+;;; mess.el --- Front-end for MAME MESS
 
 ;; Author: Yong <luo.yong.name@gmail.com>
 ;; URL: https://github.com/Iacob/elmame
@@ -37,8 +37,8 @@
 (require 'mess-machine-info-loader)
 
 
-(defun mess-make-shell-command (machine-name device-image)
-  "Make the shell command to start a machine with MACHINE-NAME."
+(defun mess-make-shell-command (machine device-image)
+  "Make the shell command to start MACHINE along with DEVICE-IMAGE."
   (let ((exec (mess-base-get-config 'exec))
 	(rompath (mess-base-get-config 'rompath))
 	(args (mess-base-get-config 'args))
@@ -49,10 +49,11 @@
         (setq args-text args)
       (setq args-text
             (string-join (mapcar (lambda (arg) (format "%s" arg)) args) " ")))
-    ;; mame <machine-name> -rompath roms -cart <device image>
-    (format "%s %s -rompath %s -cart %s %s" exec machine-name rompath device-image args-text)))
+    ;; mame <machine> -rompath roms -cart <device image>
+    (format "%s %s -rompath %s -cart %s %s" exec machine rompath device-image args-text)))
 
 (defun mess-launch-machine (machine device-image)
+  "Launch MACHINE along with DEVICE-IMAGE."
   (let* ((cmd-line (mess-make-shell-command machine device-image)))
     ;;(message-box cmd-line)
     (switch-to-buffer-other-window "**mess output**")
@@ -107,8 +108,7 @@
       
       (condition-case err
           (setq filelist (directory-files path))
-        (error nil)
-        )
+        (error nil))
 
       (dolist (file filelist)
         (when (file-regular-p (concat path "/" file))
@@ -123,20 +123,13 @@
                          :filedir path
                          :filename file
                          (concat "💾" file))
-          (widget-insert "\n")
-          )
-        
-        )
-      
-      )
+          (widget-insert "\n"))))
     
-    (widget-insert "\n")
-    
-    )
+    (widget-insert "\n"))
   
   (mess-mode)
 
-  (beginning-of-buffer)
+  (goto-char (point-min))
   
   (use-local-map mess-mode-map)
   (widget-setup))
