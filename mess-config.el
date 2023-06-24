@@ -254,7 +254,7 @@ Convert PATH-TEXT-LIST to acceptable path list."
                     (mess-config-field-value 'device-image-path))
                    ;;(mess-config--save-formvalues)
                    )
-        	 "Add")
+        	 "Add to List")
   (widget-insert " ")
   (widget-create 'link
         	 :notify
