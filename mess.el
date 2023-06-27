@@ -50,17 +50,26 @@
       (setq args-text
             (string-join (mapcar (lambda (arg) (format "%s" arg)) args) " ")))
     ;; mame <machine> -rompath roms -cart <device image>
-    (format "%s %s -rompath %s -cart %s %s" exec machine rompath device-image args-text)))
+    (format "%s %s -rompath \"%s\" -cart \"%s\" %s"
+            exec
+            machine
+            (expand-file-name rompath)
+            (expand-file-name device-image)
+            args-text)))
 
 (defun mess-launch-machine (machine device-image)
   "Launch MACHINE along with DEVICE-IMAGE."
+  
   (let* ((cmd-line (mess-make-shell-command machine device-image)))
-    ;;(message-box cmd-line)
+    ;;
     (switch-to-buffer-other-window "**mess output**")
+    ;;
+    (goto-char (point-max))
+    (when (mess-base-get-config 'working-dir)
+      (cd (mess-base-get-config 'working-dir)))
     
     (insert (format "Running command: %s" cmd-line) "\n")
-    ;;(start-process-shell-command "mess command" "**mess output**" cmd-line)
-    ))
+    (start-process-shell-command "mess command" "**mess output**" cmd-line)))
 
 (defvar mess-mode-map
   ;;(let ((map (make-sparse-keymap)))
@@ -91,6 +100,9 @@
 
   (mess-base-reload-user-config)
 
+  (when (mess-base-get-config 'working-dir)
+    (cd (mess-base-get-config 'working-dir)))
+
   (widget-insert "\n"
                  (propertize "Machine & Device Image List"
                              'face 'info-title-2)
@@ -111,14 +123,15 @@
         (error nil))
 
       (dolist (file filelist)
-        (when (file-regular-p (concat path "/" file))
+        (when (file-regular-p (file-name-concat path "/" file))
           (widget-insert " ")
           (widget-create 'link
                          :notify (lambda (w &rest params)
                                    (mess-launch-machine
                                     (widget-get w :machine)
-                                    (concat (widget-get w :filedir) "/"
-                                            (widget-get w :filename))))
+                                    (file-name-concat (widget-get w :filedir)
+                                                      "/"
+                                                      (widget-get w :filename))))
                          :machine machine
                          :filedir path
                          :filename file
