@@ -123,15 +123,15 @@
         (error nil))
 
       (dolist (file filelist)
-        (when (file-regular-p (file-name-concat path "/" file))
+        (when (file-regular-p (concat path "/" file))
           (widget-insert " ")
           (widget-create 'link
                          :notify (lambda (w &rest params)
                                    (mess-launch-machine
                                     (widget-get w :machine)
-                                    (file-name-concat (widget-get w :filedir)
-                                                      "/"
-                                                      (widget-get w :filename))))
+                                    (concat (widget-get w :filedir)
+                                            "/"
+                                            (widget-get w :filename))))
                          :machine machine
                          :filedir path
                          :filename file
