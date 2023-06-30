@@ -40,7 +40,7 @@
   "Get main device of a specified MACHINE."
   (let ((machine-defs (mess-machine-info-loader-load))
         mdef
-        device-type)
+        device)
     (setq mdef
           (seq-find (lambda (d) (string= (plist-get d 'name) machine))
                     machine-defs))
