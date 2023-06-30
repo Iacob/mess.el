@@ -36,6 +36,24 @@
 (require 'mess-config)
 (require 'mess-machine-info-loader)
 
+(defun mess-get-machine-main-device (machine)
+  "Get main device of a specified MACHINE."
+  (let ((machine-defs (mess-machine-info-loader-load))
+        mdef
+        device-type)
+    (setq mdef
+          (seq-find (lambda (d) (string= (plist-get d 'name) machine))
+                    machine-defs))
+    (setq device
+          (seq-find (lambda (d) (and (string= "cartridge"
+                                              (plist-get d 'name))
+                                     (plist-get d 'mandatory)))
+                    (plist-get mdef 'devices)))
+    (when (null device)
+      (setq device
+            (seq-find (lambda (d) (plist-get d 'mandatory))
+                      (plist-get mdef 'devices))))
+    (plist-get device 'briefname)))
 
 (defun mess-make-shell-command (machine device-image)
   "Make the shell command to start MACHINE along with DEVICE-IMAGE."
@@ -50,10 +68,11 @@
       (setq args-text
             (string-join (mapcar (lambda (arg) (format "%s" arg)) args) " ")))
     ;; mame <machine> -rompath roms -cart <device image>
-    (format "%s %s -rompath \"%s\" -cart \"%s\" %s"
+    (format "%s %s -rompath \"%s\" -%s \"%s\" %s"
             exec
             machine
             (expand-file-name rompath)
+            (or (mess-get-machine-main-device machine) "cart")
             (expand-file-name device-image)
             args-text)))
 
