@@ -1,9 +1,8 @@
-;;; mess-base.el --- MESS base functions.
+;;; mess-base.el --- MESS base functions
 
 ;; Author: Yong <luo.yong.name@gmail.com>
 ;; URL: https://github.com/Iacob/elmame
 ;; Version: 1.0
-;; Package-Requires: ((emacs "27.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -64,7 +63,7 @@
     config-value))
 
 (defun mess-base-save-user-config (user-config)
-  "Save user config to file."
+  "Save USER-CONFIG to file."
   (save-window-excursion
     (with-temp-buffer
       (insert (or (format "%S" user-config) "()"))

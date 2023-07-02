@@ -3,7 +3,6 @@
 ;; Author: Yong <luo.yong.name@gmail.com>
 ;; URL: https://github.com/Iacob/elmame
 ;; Version: 1.0
-;; Package-Requires: ((emacs "27.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,6 +29,9 @@
 
 (require 'widget)
 (require 'wid-edit)
+
+(require 'mess-base)
+(require 'mess-machine-info-loader)
 
 (defvar mess-config-user-config-text "" "User config file content.")
 (defvar mess-config-form '() "Form fields.")
@@ -153,12 +155,6 @@ Convert PATH-TEXT-LIST to acceptable path list."
                      (plist-get m 'devices)))
                   (mess-machine-info-loader-load))))
 
-
-
-
-
-
-  
   
   (widget-insert "\n" (propertize "mess.el configuration" 'face 'info-title-2) "\n\n")
   (widget-create 'link
