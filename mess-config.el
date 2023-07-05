@@ -31,7 +31,7 @@
 (require 'wid-edit)
 
 (require 'mess-base)
-(require 'mess-machine-info-loader)
+(require 'mame-machine-info-loader)
 
 (defvar mess-config-user-config-text "" "User config file content.")
 (defvar mess-config-form '() "Form fields.")
@@ -153,7 +153,7 @@ Convert PATH-TEXT-LIST to acceptable path list."
                      (lambda (d) (and (string= "cartridge" (plist-get d 'name))
                                       (plist-get d 'mandatory)))
                      (plist-get m 'devices)))
-                  (mess-machine-info-loader-load))))
+                  (mame-machine-info-loader-load))))
 
   
   (widget-insert "\n" (propertize "mess.el configuration" 'face 'info-title-2) "\n\n")

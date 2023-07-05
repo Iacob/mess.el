@@ -3,7 +3,7 @@
 ;; Author: Yong <luo.yong.name@gmail.com>
 ;; URL: https://github.com/Iacob/elmame
 ;; Version: 1.0
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (mame "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,11 +34,11 @@
 
 (require 'mess-base)
 (require 'mess-config)
-(require 'mess-machine-info-loader)
+(require 'mame-machine-info-loader)
 
 (defun mess-get-machine-main-device (machine)
   "Get main device of a specified MACHINE."
-  (let ((machine-defs (mess-machine-info-loader-load))
+  (let ((machine-defs (mame-machine-info-loader-load))
         mdef
         device)
     (setq mdef
