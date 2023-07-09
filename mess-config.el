@@ -24,9 +24,6 @@
 
 ;;; Code:
 
-
-(provide 'mess-config)
-
 (require 'widget)
 (require 'wid-edit)
 
@@ -274,5 +271,8 @@ Convert PATH-TEXT-LIST to acceptable path list."
   (widget-setup)
 
   (mess-config--load-config))
+
+
+(provide 'mess-config)
 
 ;;; mess-config.el ends here

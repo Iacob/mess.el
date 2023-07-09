@@ -26,9 +26,6 @@
 
 ;;; Code:
 
-
-(provide 'mess)
-
 (require 'widget)
 (require 'wid-edit)
 
@@ -165,5 +162,9 @@
   
   (use-local-map mess-mode-map)
   (widget-setup))
+
+
+
+(provide 'mess)
 
 ;;; mess.el ends here

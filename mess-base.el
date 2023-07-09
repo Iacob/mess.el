@@ -24,8 +24,6 @@
 
 ;;; Code:
 
-(provide 'mess-base)
-
 (defvar mess-base-user-config nil "The mess.el user config from file.")
 
 (defun mess-base-read-user-config ()
@@ -68,5 +66,8 @@
     (with-temp-buffer
       (insert (or (format "%S" user-config) "()"))
       (write-file "~/.elmess" 't))))
+
+
+(provide 'mess-base)
 
 ;;; mess-base.el ends here
