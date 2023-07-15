@@ -2,7 +2,7 @@
 
 ;; Author: Yong <luo.yong.name@gmail.com>
 ;; URL: https://github.com/Iacob/elmame
-;; Version: 1.0
+;; Version: 1.1
 ;; Package-Requires: ((emacs "27.1") (mame "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,69 @@
 (require 'mess-base)
 (require 'mess-config)
 (require 'mame-machine-info-loader)
+
+(defvar mess-context '() "Context of mess.el.")
+
+(defun mess-context-set (key value)
+  "Change context value, assign VALUE to KEY."
+  (if (assoc key mess-context)
+      (setcdr (assoc key mess-context) value)
+    (add-to-list 'mess-context (cons key value) 't)))
+
+(defun mess-context-get (key)
+  "Get context value which key is KEY."
+  (cdr (assoc key mess-context)))
+
+(defun mess-scrollout-open (comp-id machine filepath)
+  "Open the scrollout component.
+COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the directory of the device images."
+  (message "mess-scrolout-open1")
+  (save-excursion
+    (forward-line)
+    (beginning-of-line)
+
+    (let (filelist)
+      (condition-case err
+          (setq filelist (directory-files filepath))
+        (error nil))
+
+      (dolist (file filelist)
+        (when (file-regular-p (concat filepath "/" file))
+          (let ((inhibit-read-only t))
+            (widget-insert " ")
+            (widget-create 'link
+                           :notify (lambda (w &rest params)
+                                     (mess-launch-machine
+                                      (widget-get w :machine)
+                                      (concat (widget-get w :filedir)
+                                              "/"
+                                              (widget-get w :filename))))
+                           :machine machine
+                           :filedir filepath
+                           :filename file
+                           (concat "💾" file))
+            (widget-insert "\n")))))
+    (mess-context-set (format "scrollout-comp-%s-last-line" comp-id)
+                      (line-number-at-pos (point)))
+    (mess-context-set (format "scrollout-comp-%s-is-open" comp-id) 't)))
+
+
+(defun mess-scrollout-close (comp-id)
+  "Close scrollout component which id is COMP-ID."
+  (mess-context-set (format "scrollout-comp-%s-is-open" comp-id) nil)
+  (let* ((start-line (1+ (line-number-at-pos)))
+         (end-line (mess-context-get (format "scrollout-comp-%s-last-line"
+                                             comp-id)))
+         pos1 pos2)
+    (when (and end-line (>= end-line start-line))
+      (save-excursion
+        (next-line)
+        (setq pos1 (line-beginning-position))
+        (goto-line end-line)
+        (setq pos2 (line-end-position))
+        (let ((inhibit-read-only t))
+          (delete-region pos1 pos2))))))
+
 
 (defun mess-get-machine-main-device (machine)
   "Get main device of a specified MACHINE."
@@ -126,35 +189,33 @@
                  (propertize "(Use MESS menu from menubar to open config panel or refresh this page.)" 'face 'italic)
                  "\n\n")
   
-  (dolist (path1 (mess-base-get-config 'device-image-path-list))
-    
-    (let ((machine (car path1))
-          (path (cadr path1))
-          filelist)
-      
-      (widget-insert "==" (propertize machine 'face 'info-title-3) "==\n")
-      
-      (condition-case err
-          (setq filelist (directory-files path))
-        (error nil))
 
-      (dolist (file filelist)
-        (when (file-regular-p (concat path "/" file))
-          (widget-insert " ")
-          (widget-create 'link
-                         :notify (lambda (w &rest params)
-                                   (mess-launch-machine
-                                    (widget-get w :machine)
-                                    (concat (widget-get w :filedir)
-                                            "/"
-                                            (widget-get w :filename))))
-                         :machine machine
-                         :filedir path
-                         :filename file
-                         (concat "💾" file))
-          (widget-insert "\n"))))
-    
-    (widget-insert "\n"))
+  (let ((scrollout-comp-id 0))
+    (dolist (path1 (mess-base-get-config 'device-image-path-list))
+      (let ((machine (car path1))
+            (path (cadr path1))
+            filelist
+            (scrollout-comp-id 0))
+        
+        (setq scrollout-comp-id (1+ scrollout-comp-id))
+        (widget-create 'link
+                       :notify (lambda (w &rest ignore)
+                                 (let* ((comp-id (widget-get w :comp-id))
+                                        (machine (widget-get w :machine))
+                                        (is-open (mess-context-get (format "scrollout-comp-%s-is-open" comp-id)))
+                                        (filepath (widget-get w :filepath)))
+                                   (if is-open
+                                       (mess-scrollout-close comp-id)
+                                     (mess-scrollout-open comp-id
+                                                          machine
+                                                          filepath))))
+                       :machine machine
+                       :filepath path
+                       :comp-id scrollout-comp-id
+                       (concat "==" machine "=="))
+        (widget-insert "\n\n"))))
+  (widget-insert "\n\n")
+  
   
   (mess-mode)
 
