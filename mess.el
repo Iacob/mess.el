@@ -45,19 +45,32 @@
   "Get context value which key is KEY."
   (cdr (assoc key mess-context)))
 
+(defun mess--list-device-images (filedir)
+  "List device images in FILEDIR."
+  (let (filelist)
+    (condition-case err
+        (progn
+          (setq filelist (directory-files filedir))
+          (setq filelist
+                (seq-filter (lambda (f)
+                              (and (> (seq-length f) 0)
+                                   (not (eq (seq-elt f 0) ?.))))
+                            filelist)))
+      (error nil))
+    filelist))
+
 (defun mess-scrollout-open (comp-id machine filepath)
   "Open the scrollout component.
 COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the directory of the device images."
-  (message "mess-scrolout-open1")
   (save-excursion
     (forward-line)
     (beginning-of-line)
-
+    
     (let (filelist)
       (condition-case err
-          (setq filelist (directory-files filepath))
+          (seq filelist (mess--list-device-images filepath))
         (error nil))
-
+      
       (dolist (file filelist)
         (when (file-regular-p (concat filepath "/" file))
           (let ((inhibit-read-only t))
@@ -74,6 +87,7 @@ COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the direct
                            :filename file
                            (concat "💾" file))
             (widget-insert "\n")))))
+    
     (mess-context-set (format "scrollout-comp-%s-last-line" comp-id)
                       (line-number-at-pos (point)))
     (mess-context-set (format "scrollout-comp-%s-is-open" comp-id) 't)))
@@ -194,10 +208,10 @@ COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the direct
     (dolist (path1 (mess-base-get-config 'device-image-path-list))
       (let ((machine (car path1))
             (path (cadr path1))
-            filelist
-            (scrollout-comp-id 0))
+            filelist)
         
         (setq scrollout-comp-id (1+ scrollout-comp-id))
+        (setq filelist (mess--list-device-images path))
         (widget-create 'link
                        :notify (lambda (w &rest ignore)
                                  (let* ((comp-id (widget-get w :comp-id))
@@ -212,7 +226,12 @@ COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the direct
                        :machine machine
                        :filepath path
                        :comp-id scrollout-comp-id
-                       (concat "==" machine "=="))
+                       (concat "=="
+                               machine
+                               " ("
+                               (number-to-string (seq-length filelist))
+                               " in directory) "
+                               "=="))
         (widget-insert "\n\n"))))
   (widget-insert "\n\n")
   
