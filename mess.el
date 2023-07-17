@@ -61,14 +61,18 @@
 
 (defun mess-scrollout-open (comp-id machine filepath)
   "Open the scrollout component.
-COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the directory of the device images."
+
+COMP-ID is the component id,
+MACHINE is the machine name,
+FILEPATH is the directory of the device images."
   (save-excursion
-    (forward-line)
-    (beginning-of-line)
-    
-    (let (filelist)
+    (let (filelist (start-line (line-number-at-pos)))
+      
+      (forward-line)
+      (beginning-of-line)
+      
       (condition-case err
-          (seq filelist (mess--list-device-images filepath))
+          (setq filelist (mess--list-device-images filepath))
         (error nil))
       
       (dolist (file filelist)
@@ -86,10 +90,11 @@ COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the direct
                            :filedir filepath
                            :filename file
                            (concat "💾" file))
-            (widget-insert "\n")))))
+            (widget-insert "\n"))))
+      (mess-context-set (format "scrollout-comp-%s-lines" comp-id)
+                        (- (line-number-at-pos) start-line)))
     
-    (mess-context-set (format "scrollout-comp-%s-last-line" comp-id)
-                      (line-number-at-pos (point)))
+    
     (mess-context-set (format "scrollout-comp-%s-is-open" comp-id) 't)))
 
 
@@ -97,14 +102,15 @@ COMP-ID is the component id, MACHINE is the machine name, FILEPATH is the direct
   "Close scrollout component which id is COMP-ID."
   (mess-context-set (format "scrollout-comp-%s-is-open" comp-id) nil)
   (let* ((start-line (1+ (line-number-at-pos)))
-         (end-line (mess-context-get (format "scrollout-comp-%s-last-line"
+         (lines (mess-context-get (format "scrollout-comp-%s-lines"
                                              comp-id)))
+         (end-line (1- (+ start-line lines)))
          pos1 pos2)
     (when (and end-line (>= end-line start-line))
       (save-excursion
-        (next-line)
+        (forward-line)
         (setq pos1 (line-beginning-position))
-        (goto-line end-line)
+        (forward-line (- end-line start-line))
         (setq pos2 (line-end-position))
         (let ((inhibit-read-only t))
           (delete-region pos1 pos2))))))
