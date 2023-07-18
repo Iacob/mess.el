@@ -197,6 +197,8 @@ FILEPATH is the directory of the device images."
   (let ((inhibit-read-only 't))
     (erase-buffer))
 
+  (setq mess-context '())
+
   (mess-base-reload-user-config)
 
   (when (mess-base-get-config 'working-dir)
